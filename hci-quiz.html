@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HCI Quiz — Evolution & Design</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --card: #1a1a26;
+    --border: #2a2a3e;
+    --accent: #7c6dff;
+    --accent2: #ff6d8a;
+    --accent3: #6dffd0;
+    --text: #e8e8f0;
+    --muted: #6b6b88;
+    --correct: #4ade80;
+    --wrong: #f87171;
+    --warning: #fbbf24;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* GRID BACKGROUND */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,109,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,109,255,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* GLOW ORBS */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .orb-1 { width: 400px; height: 400px; background: rgba(124,109,255,0.12); top: -100px; left: -100px; }
+  .orb-2 { width: 300px; height: 300px; background: rgba(255,109,138,0.08); bottom: 100px; right: -50px; }
+  .orb-3 { width: 200px; height: 200px; background: rgba(109,255,208,0.06); top: 50%; left: 50%; }
+
+  /* LAYOUT */
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 20px;
+  }
+
+  /* HEADER */
+  .header {
+    text-align: center;
+    margin-bottom: 48px;
+    animation: fadeDown 0.8s ease both;
+  }
+
+  .header-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(32px, 6vw, 56px);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #fff 0%, var(--accent) 50%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+  }
+
+  .header-sub {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  /* PROGRESS BAR */
+  .progress-bar-wrap {
+    background: var(--border);
+    border-radius: 100px;
+    height: 4px;
+    margin-bottom: 32px;
+    overflow: hidden;
+    animation: fadeIn 1s ease both 0.3s;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 100px;
+    transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  /* STATS BAR */
+  .stats-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    animation: fadeIn 1s ease both 0.4s;
+  }
+
+  .stat-chip {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+  }
+  .stat-chip span { color: var(--text); font-weight: 400; }
+  .stat-chip.accent-chip { border-color: var(--accent); color: var(--accent); }
+  .stat-chip.accent-chip span { color: var(--accent); }
+
+  /* QUESTION CARD */
+  .question-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 36px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+    animation: slideUp 0.5s cubic-bezier(0.4,0,0.2,1) both;
+  }
+
+  .question-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+  }
+
+  .question-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .q-number {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+  }
+
+  .q-type-badge {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-weight: 400;
+  }
+  .badge-mc { background: rgba(124,109,255,0.15); color: var(--accent); border: 1px solid rgba(124,109,255,0.3); }
+  .badge-id { background: rgba(109,255,208,0.1); color: var(--accent3); border: 1px solid rgba(109,255,208,0.3); }
+  .badge-tf { background: rgba(255,109,138,0.1); color: var(--accent2); border: 1px solid rgba(255,109,138,0.3); }
+
+  .question-text {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--text);
+    margin-bottom: 28px;
+  }
+
+  /* MC OPTIONS */
+  .options-grid {
+    display: grid;
+    gap: 10px;
+  }
+
+  .option-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    text-align: left;
+    cursor: pointer;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .option-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: rgba(124,109,255,0.08);
+    transform: translateX(4px);
+  }
+  .option-label {
+    width: 24px; height: 24px;
+    border-radius: 6px;
+    background: var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 400;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+  .option-btn.correct { border-color: var(--correct); background: rgba(74,222,128,0.08); }
+  .option-btn.correct .option-label { background: var(--correct); color: #000; }
+  .option-btn.wrong { border-color: var(--wrong); background: rgba(248,113,113,0.08); }
+  .option-btn.wrong .option-label { background: var(--wrong); color: #000; }
+  .option-btn.reveal-correct { border-color: var(--correct); background: rgba(74,222,128,0.05); opacity: 0.7; }
+  .option-btn:disabled { cursor: not-allowed; }
+
+  /* TF BUTTONS */
+  .tf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .tf-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    cursor: pointer;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    transition: all 0.2s ease;
+    letter-spacing: 0.05em;
+  }
+  .tf-btn:hover:not(:disabled) { transform: translateY(-2px); }
+  .tf-btn.true-btn:hover:not(:disabled) { border-color: var(--correct); background: rgba(74,222,128,0.08); }
+  .tf-btn.false-btn:hover:not(:disabled) { border-color: var(--wrong); background: rgba(248,113,113,0.08); }
+  .tf-btn.correct { border-color: var(--correct); background: rgba(74,222,128,0.1); color: var(--correct); }
+  .tf-btn.wrong { border-color: var(--wrong); background: rgba(248,113,113,0.1); color: var(--wrong); }
+  .tf-btn.reveal-correct { border-color: var(--correct); background: rgba(74,222,128,0.05); opacity: 0.7; }
+  .tf-btn:disabled { cursor: not-allowed; }
+
+  /* IDENTIFICATION */
+  .id-wrap { display: flex; gap: 10px; }
+  .id-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .id-input:focus { border-color: var(--accent3); }
+  .id-input.correct { border-color: var(--correct); background: rgba(74,222,128,0.05); }
+  .id-input.wrong { border-color: var(--wrong); background: rgba(248,113,113,0.05); }
+  .id-submit {
+    background: linear-gradient(135deg, var(--accent3), #4dd);
+    color: #000;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 22px;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .id-submit:hover { opacity: 0.85; transform: translateY(-1px); }
+  .id-submit:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* FEEDBACK */
+  .feedback-box {
+    margin-top: 16px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 12px;
+    display: none;
+    animation: fadeIn 0.3s ease;
+  }
+  .feedback-box.show { display: flex; gap: 8px; align-items: flex-start; }
+  .feedback-correct { background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.25); color: var(--correct); }
+  .feedback-wrong { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.25); color: var(--wrong); }
+  .feedback-icon { flex-shrink: 0; font-size: 14px; }
+
+  /* INFO PANEL */
+  .info-panel {
+    margin-top: 14px;
+    padding: 16px 18px;
+    border-radius: 12px;
+    background: rgba(124,109,255,0.07);
+    border: 1px solid rgba(124,109,255,0.2);
+    display: none;
+    animation: fadeIn 0.4s ease 0.15s both;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .info-panel.show { display: flex; }
+  .info-panel-label {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 400;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .info-panel-label::before {
+    content: '◈';
+    font-size: 12px;
+  }
+  .info-panel-text {
+    font-size: 12.5px;
+    color: #c0bfda;
+    line-height: 1.65;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* NAVIGATION */
+  .nav-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    animation: fadeIn 1s ease both 0.5s;
+  }
+
+  .nav-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 22px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .skip-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 18px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .skip-btn:hover { border-color: var(--warning); color: var(--warning); }
+
+  /* RESULTS SCREEN */
+  #results-screen {
+    display: none;
+    animation: fadeDown 0.6s ease both;
+  }
+
+  .results-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 48px 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .results-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+  }
+
+  .score-display {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(64px, 12vw, 96px);
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent3) 0%, var(--accent) 50%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .score-label { color: var(--muted); font-size: 13px; margin-bottom: 32px; }
+
+  .breakdown-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .breakdown-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 12px;
+  }
+  .breakdown-val {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 4px;
+  }
+  .breakdown-name { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+
+  .grade-badge {
+    display: inline-block;
+    padding: 8px 24px;
+    border-radius: 100px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    margin-bottom: 32px;
+  }
+
+  .restart-btn {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: 14px;
+    padding: 16px 36px;
+    color: #fff;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.25s;
+    letter-spacing: 0.03em;
+  }
+  .restart-btn:hover { opacity: 0.85; transform: translateY(-2px); box-shadow: 0 10px 30px rgba(124,109,255,0.3); }
+
+  /* START SCREEN */
+  #start-screen {
+    animation: fadeDown 0.6s ease both;
+  }
+  .start-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 48px 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .start-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+  }
+  .topic-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin: 24px 0;
+  }
+  .topic-chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 6px 14px;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+  }
+  .start-stats {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin: 28px 0;
+    flex-wrap: wrap;
+  }
+  .start-stat { text-align: center; }
+  .start-stat-val {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--accent);
+    display: block;
+  }
+  .start-stat-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .start-btn {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: 14px;
+    padding: 18px 48px;
+    color: #fff;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.25s;
+    letter-spacing: 0.03em;
+  }
+  .start-btn:hover { opacity: 0.85; transform: translateY(-2px); box-shadow: 0 12px 36px rgba(124,109,255,0.35); }
+
+  /* ANIMATIONS */
+  @keyframes fadeDown { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pop { 0%,100%{transform:scale(1)} 50%{transform:scale(1.12)} }
+
+  .pop { animation: pop 0.3s ease; }
+
+  /* QUIZ SCREEN */
+  #quiz-screen { display: none; }
+
+  /* QUESTION COUNTER DOTS */
+  .dot-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 24px;
+    animation: fadeIn 1s ease both 0.2s;
+  }
+  .dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: all 0.3s;
+    cursor: pointer;
+  }
+  .dot.answered-correct { background: var(--correct); }
+  .dot.answered-wrong { background: var(--wrong); }
+  .dot.current { background: var(--accent); transform: scale(1.4); }
+
+  @media (max-width: 600px) {
+    .question-card { padding: 24px 20px; }
+    .start-card, .results-card { padding: 32px 20px; }
+    .breakdown-grid { grid-template-columns: 1fr; }
+    .tf-grid { grid-template-columns: 1fr; }
+    .id-wrap { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="wrapper">
+  <div class="header">
+    <span class="header-label">// Course Review</span>
+    <h1>HCI Quiz</h1>
+    <p class="header-sub">Human-Computer Interaction — 50 Questions</p>
+  </div>
+
+  <!-- START SCREEN -->
+  <div id="start-screen">
+    <div class="start-card">
+      <p style="font-size:13px; color:var(--muted); margin-bottom:8px; letter-spacing:0.05em;">TOPICS COVERED</p>
+      <div class="topic-chips">
+        <span class="topic-chip">Evolution of HCI</span>
+        <span class="topic-chip">CLI & GUI</span>
+        <span class="topic-chip">Cognitive Revolution</span>
+        <span class="topic-chip">Mobile HCI</span>
+        <span class="topic-chip">AR / VR</span>
+        <span class="topic-chip">NUI</span>
+        <span class="topic-chip">Wearables</span>
+        <span class="topic-chip">Ethical AI</span>
+        <span class="topic-chip">Design Thinking</span>
+        <span class="topic-chip">HCI Challenges</span>
+        <span class="topic-chip">Accessibility</span>
+        <span class="topic-chip">Affective Computing</span>
+      </div>
+      <div class="start-stats">
+        <div class="start-stat"><span class="start-stat-val">50</span><span class="start-stat-lbl">Questions</span></div>
+        <div class="start-stat"><span class="start-stat-val" style="color:var(--accent)">20</span><span class="start-stat-lbl">Multiple Choice</span></div>
+        <div class="start-stat"><span class="start-stat-val" style="color:var(--accent3)">15</span><span class="start-stat-lbl">Identification</span></div>
+        <div class="start-stat"><span class="start-stat-val" style="color:var(--accent2)">15</span><span class="start-stat-lbl">True or False</span></div>
+      </div>
+      <button class="start-btn" onclick="startQuiz()">Begin Quiz →</button>
+    </div>
+  </div>
+
+  <!-- QUIZ SCREEN -->
+  <div id="quiz-screen">
+    <div class="dot-nav" id="dot-nav"></div>
+
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+
+    <div class="stats-bar">
+      <div class="stat-chip accent-chip">Q <span id="q-current">1</span> / 50</div>
+      <div class="stat-chip">✓ Correct: <span id="score-correct">0</span></div>
+      <div class="stat-chip">✗ Wrong: <span id="score-wrong">0</span></div>
+      <div class="stat-chip">◎ Skipped: <span id="score-skip">0</span></div>
+    </div>
+
+    <div class="question-card" id="question-card">
+      <div class="question-meta">
+        <span class="q-number" id="q-num-label">01</span>
+        <span class="q-type-badge" id="q-type-badge">—</span>
+      </div>
+      <div class="question-text" id="question-text">Loading...</div>
+      <div id="answer-area"></div>
+      <div class="feedback-box" id="feedback-box">
+        <span class="feedback-icon" id="feedback-icon"></span>
+        <span id="feedback-text"></span>
+      </div>
+      <div class="info-panel" id="info-panel">
+        <span class="info-panel-label">Topic Analysis</span>
+        <span class="info-panel-text" id="info-panel-text"></span>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="nav-btn" id="prev-btn" onclick="prevQuestion()" disabled>← Prev</button>
+      <button class="skip-btn" id="skip-btn" onclick="skipQuestion()">Skip →</button>
+      <button class="nav-btn" id="next-btn" onclick="nextQuestion()" disabled>Next →</button>
+    </div>
+  </div>
+
+  <!-- RESULTS SCREEN -->
+  <div id="results-screen">
+    <div class="results-card">
+      <p style="font-size:12px;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:16px;">Quiz Complete</p>
+      <div class="score-display" id="final-score">0</div>
+      <div class="score-label">out of 50 correct</div>
+      <div class="grade-badge" id="grade-badge"></div>
+      <div class="breakdown-grid">
+        <div class="breakdown-item">
+          <div class="breakdown-val" style="color:var(--accent)" id="res-mc">—</div>
+          <div class="breakdown-name">Multiple Choice</div>
+        </div>
+        <div class="breakdown-item">
+          <div class="breakdown-val" style="color:var(--accent3)" id="res-id">—</div>
+          <div class="breakdown-name">Identification</div>
+        </div>
+        <div class="breakdown-item">
+          <div class="breakdown-val" style="color:var(--accent2)" id="res-tf">—</div>
+          <div class="breakdown-name">True or False</div>
+        </div>
+      </div>
+      <button class="restart-btn" onclick="restartQuiz()">↺ Try Again</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const questions = [
+  // ─── MULTIPLE CHOICE (20) ───
+  // Source: Evolution-of-Human-Computer-Interaction.pptx & Advanced HCI Theories.pptx
+  {
+    type: 'mc',
+    q: 'In HCI, what does "interaction" refer to according to the Advanced HCI Theories slide deck?',
+    options: [
+      'The visual design of a software interface',
+      'The exchange of actions (input) from the user and responses (feedback) from the system',
+      'The hardware components of a computer system',
+      'The programming logic behind an application'
+    ],
+    answer: 1,
+    info: 'From the Advanced HCI Theories slides: "Interaction refers to the way users and systems communicate with each other to complete tasks. It involves the exchange of actions (input) from the user and responses (feedback) from the system." This definition frames the entire discipline of HCI.'
+  },
+  {
+    type: 'mc',
+    q: 'According to the Advanced HCI Theories slides, which of the following is NOT one of the four components of Abowd and Beale\'s interaction framework?',
+    options: ['User', 'Input', 'Network', 'Output'],
+    answer: 2,
+    info: 'Abowd and Beale\'s framework extends Norman\'s model and has exactly four parts: User, Input, System, and Output — each with its own unique language. Interaction is defined as translation between these languages. "Network" is not one of the four components.'
+  },
+  {
+    type: 'mc',
+    q: 'Donald Norman\'s model of interaction focuses primarily on:',
+    options: [
+      'The hardware ergonomics of input devices',
+      'The user\'s view of the interface through a seven-stage execution/evaluation loop',
+      'The network infrastructure behind digital systems',
+      'The programming architecture of operating systems'
+    ],
+    answer: 1,
+    info: 'According to the Advanced HCI Theories slides, "Norman\'s model concentrates on the user\'s view of the interface." It describes seven stages: establishing the goal, formulating intention, specifying actions, executing, perceiving system state, interpreting it, and evaluating against the goal.'
+  },
+  {
+    type: 'mc',
+    q: 'The "Gulf of Execution" in Norman\'s model occurs when:',
+    options: [
+      'The user forgets their password',
+      'The user\'s formulation of actions does not match the actions allowed by the system',
+      'The system crashes during operation',
+      'The output display is visually unclear'
+    ],
+    answer: 1,
+    info: 'From the Advanced HCI Theories slides: "Gulf of Execution — user\'s formulation of actions ≠ actions allowed by the system." It represents a mismatch between what the user wants to do and what the system actually allows them to do, making the interface harder to use.'
+  },
+  {
+    type: 'mc',
+    q: 'According to the Advanced HCI slides, a "slip" in human error refers to:',
+    options: [
+      'Having the wrong goal entirely',
+      'A system crash caused by a software bug',
+      'Understanding the system correctly but performing an incorrect action',
+      'Misreading the output display'
+    ],
+    answer: 2,
+    info: 'From the Advanced HCI Theories slides: "slip — understand system and goal, correct formulation of action, incorrect action." A slip is distinguished from a mistake: in a slip the user has the right goal but performs the wrong action. The fix for slips is better interface design.'
+  },
+  {
+    type: 'mc',
+    q: 'Which interaction style does the Advanced HCI slides describe as "suitable for repetitive tasks" and "better for expert users than novices"?',
+    options: ['Menus', 'Form-fills', 'Command Line Interface', 'Natural Language'],
+    answer: 2,
+    info: 'From the Advanced HCI Theories slides on Command Line Interface: "suitable for repetitive tasks, better for expert users than novices, offers direct access to system functionality." The Unix system is cited as a typical example. CLIs require memorizing exact commands but allow very fast and scriptable interaction.'
+  },
+  {
+    type: 'mc',
+    q: 'According to the Advanced HCI slides, what is the key advantage of menu-based interaction styles?',
+    options: [
+      'They require users to memorize exact command syntax',
+      'Options are visible, reducing recall and relying on recognition',
+      'They are only suitable for expert users',
+      'They allow full natural language queries'
+    ],
+    answer: 1,
+    info: 'From the Advanced HCI Theories slides on Menus: "Options visible — less recall, easier to use — rely on recognition so names should be meaningful." Menus reduce cognitive load because users recognize options rather than having to recall them from memory, making them more accessible to novice users.'
+  },
+  {
+    type: 'mc',
+    q: 'Ergonomics in HCI is also referred to as:',
+    options: ['Cognitive psychology', 'Human factors', 'Interaction modeling', 'User interface design'],
+    answer: 1,
+    info: 'From the Advanced HCI Theories slides: "Ergonomics — also known as human factors." It is the study of designing systems, tools, and environments to fit human capabilities and limitations. In HCI, ergonomics ensures that hardware, software, and interfaces are comfortable, efficient, and safe to use.'
+  },
+  {
+    type: 'mc',
+    q: 'In the Evolution of HCI slides, what cognitive psychology concepts became central to interaction design during the Cognitive Revolution (1980s–1990s)?',
+    options: [
+      'Networking, bandwidth, and latency',
+      'Feedback, memory, and attention',
+      'Color theory, typography, and layout',
+      'Encryption, security, and privacy'
+    ],
+    answer: 1,
+    info: 'From the Evolution of HCI slides: "Cognitive psychology principles, such as feedback, memory, and attention, became central to interaction design" during the Cognitive Revolution. This era also highlighted the publication of Don Norman\'s "The Psychology of Everyday Things," stressing user-centered design.'
+  },
+  {
+    type: 'mc',
+    q: 'According to the Evolution of HCI slides, what design principles emerged during the Ubiquitous Computing era (1990s–2000s) to accommodate diverse devices?',
+    options: [
+      'Command-line scripting and batch processing',
+      'Responsive and adaptive design principles',
+      'Punch card programming and batch input',
+      'WIMP and form-fill interfaces'
+    ],
+    answer: 1,
+    info: 'From the Evolution of HCI slides: "Responsive and adaptive design principles emerged to accommodate diverse screen sizes and input methods" during the Ubiquitous Computing era. The proliferation of smartphones and PDAs created new challenges requiring interfaces that adapt to many different device contexts.'
+  },
+  {
+    type: 'mc',
+    q: 'The Design Thinking Process is described in the slides as which type of approach to problem-solving?',
+    options: [
+      'Linear and sequential',
+      'Top-down and managerial',
+      'Human-centered and iterative',
+      'Technical and algorithm-based'
+    ],
+    answer: 2,
+    info: 'From the Design Thinking Process slides: "The Design Thinking Process is a human-centered, iterative approach to problem-solving that fosters innovation and creativity." The slides also note it is "a non-linear, iterative process," meaning teams can revisit and loop through its five stages as needed.'
+  },
+  {
+    type: 'mc',
+    q: 'According to the Design Thinking slides, what does the DEFINE stage require designers to do?',
+    options: [
+      'Develop low-fidelity prototypes',
+      'Brainstorm multiple creative solutions',
+      'Clearly articulate the problem based on gathered insights',
+      'Gather user feedback by testing in real-world scenarios'
+    ],
+    answer: 2,
+    info: 'From the Design Thinking Process slides on Stage 2 — Define: "Clearly articulate the problem based on gathered insights. Frame the problem statement in a way that guides ideation." The Define stage turns raw empathy research into a clear, actionable problem statement that drives the rest of the design process.'
+  },
+  {
+    type: 'mc',
+    q: 'What do "User Needs" refer to, as defined in the Design Thinking Process slides?',
+    options: [
+      'The technical requirements of a software system',
+      'The marketing goals of a product team',
+      'Users\' desires, goals, preferences and expectations when interacting with a product or service',
+      'The hardware specifications of a computing device'
+    ],
+    answer: 2,
+    info: 'From the Design Thinking Process slides: "User needs refer to users\' desires, goals, preferences and expectations when they interact with a product or service. These can encompass a wide range of factors such as functionality, usability, aesthetics, accessibility and emotional satisfaction." Understanding user needs is the backbone of UX design.'
+  },
+  {
+    type: 'mc',
+    q: 'According to the Evolution of HCI slides, what was the role of affective computing in the Social and Emotional Aspects era (2000s–2010s)?',
+    options: [
+      'Replacing GUIs with command-line interfaces',
+      'Exploring the integration of emotional intelligence into interactive systems',
+      'Developing faster network protocols',
+      'Reducing the file size of software applications'
+    ],
+    answer: 1,
+    info: 'From the Evolution of HCI slides: "Affective computing emerged, exploring the integration of emotional intelligence into interactive systems" during the 2000s–2010s. This era expanded HCI beyond pure usability to consider emotional and social dimensions of how people interact with technology and with each other through it.'
+  },
+  {
+    type: 'mc',
+    q: 'The Advanced HCI slides describe problems of interaction as equivalent to:',
+    options: [
+      'Hardware failure in input devices',
+      'Problems in translation between languages of each framework component',
+      'Network latency between client and server',
+      'Insufficient memory allocation by the operating system'
+    ],
+    answer: 1,
+    info: 'From the Advanced HCI Theories slides on Abowd and Beale\'s framework: "interaction = translation between languages, problems in interaction = problems in translation." Each component (user, input, system, output) has its own language, and HCI problems arise when translation between these breaks down.'
+  },
+  {
+    type: 'mc',
+    q: 'According to the Design Thinking slides, which of these is identified as a Key Challenge related to user needs?',
+    options: [
+      'Too many font choices in design tools',
+      'Misalignment between user needs and design inputs',
+      'Slow internet connection speeds',
+      'Lack of color palette options'
+    ],
+    answer: 1,
+    info: 'From the Design Thinking Process slides: "Misalignment Between User Needs and Design Inputs — Sometimes, there can be a misalignment between what users actually need and what designers perceive as their needs." Designers may impose assumptions or rely on anecdotal evidence, resulting in products that fail to meet real user needs.'
+  },
+  {
+    type: 'mc',
+    q: 'The origins of HCI can be traced back to which historical period, according to the Evolution of HCI slides?',
+    options: ['The Industrial Revolution (1800s)', 'World War II (1940s)', 'The Space Race (1960s)', 'The Dot-com Boom (1990s)'],
+    answer: 1,
+    info: 'From the Evolution of HCI slides: "The origins of HCI can be traced back to World War II, where researchers worked on early computing systems." This led to the development of punch cards and command-line interfaces, which marked the initial interactions between humans and computers, accessible only to experts.'
+  },
+  {
+    type: 'mc',
+    q: 'According to the Evolution of HCI slides, HCI in the present-future era is increasingly focusing on what aspects of AI systems?',
+    options: [
+      'Speed and processing power',
+      'Storage capacity and database efficiency',
+      'Transparency, fairness, and user control',
+      'Graphics rendering and visual output'
+    ],
+    answer: 2,
+    info: 'From the Evolution of HCI slides on Ethical Considerations: "HCI is increasingly focusing on ethical considerations in the design of AI systems, emphasizing transparency, fairness, and user control." Conversations around responsible AI and technology\'s societal impact are becoming integral to HCI research and practice.'
+  },
+  {
+    type: 'mc',
+    q: 'In the Advanced HCI slides, the three key "terms of interaction" are Goal, Task, and:',
+    options: ['Interface', 'Domain', 'System', 'Output'],
+    answer: 1,
+    info: 'From the Advanced HCI Theories slides: The three terms of interaction are Domain ("the area of work under study, e.g. graphic design"), Goal ("what you want to achieve, e.g. create a solid red triangle"), and Task ("how you go about doing it — ultimately in terms of operations or actions").'
+  },
+  {
+    type: 'mc',
+    q: 'According to the Design Thinking slides, what happens when designers fail to iterate and adapt?',
+    options: [
+      'The product launches faster than expected',
+      'User research becomes unnecessary',
+      'The design can lead to outdated and irrelevant products',
+      'The prototype stage is skipped entirely'
+    ],
+    answer: 2,
+    info: 'From the Design Thinking Process slides: "If designers fail to iterate and update designs based on changing user needs, that\'s a mistake that can lead to outdated and irrelevant products." User needs evolve over time, so continuous evaluation and improvement are essential for keeping designs aligned with users\' expectations.'
+  },
+
+  // ─── IDENTIFICATION (15) ───
+  // Source: All three PPTX files
+  {
+    type: 'id',
+    q: 'Name the HCI researcher whose model describes seven stages of user interaction, including the "Gulf of Execution" and "Gulf of Evaluation."',
+    answer: 'Donald Norman',
+    accept: ['donald norman','norman','don norman'],
+    info: 'From the Advanced HCI Theories slides: Donald Norman\'s model "concentrates on the user\'s view of the interface" through a seven-stage execution/evaluation loop. His concept of the Gulf of Execution (what a user wants to do vs. what the system allows) and Gulf of Evaluation (expected vs. actual system state) are foundational HCI concepts.'
+  },
+  {
+    type: 'id',
+    q: 'What is the term for the four-part framework — User, Input, System, Output — that extends Norman\'s model, as described in the Advanced HCI slides?',
+    answer: 'Abowd and Beale framework',
+    accept: ['abowd and beale','abowd & beale','abowd and beale framework','interaction framework','abowd beale'],
+    info: 'From the Advanced HCI Theories slides: The Abowd and Beale framework is "an extension of Norman\'s model" with four parts — user, input, system, output — each with its own unique language. It is described as a "general framework for understanding interaction" that "identifies all major components involved in interaction."'
+  },
+  {
+    type: 'id',
+    q: 'According to the Advanced HCI slides, what interaction style is described as a "restricted form of full WIMP system" where options are visible on screen for users to select?',
+    answer: 'Menus',
+    accept: ['menus','menu','menu-based','menu based'],
+    info: 'From the Advanced HCI Theories slides on Menus: "A set of options displayed on the screen. Options visible — less recall, easier to use — rely on recognition so names should be meaningful." Selection can be made via numbers, letters, arrow keys, or mouse. Menus are described as a "restricted form of full WIMP system."'
+  },
+  {
+    type: 'id',
+    q: 'What term describes the study of the physical characteristics of interaction, also known as "human factors," as defined in the Advanced HCI slides?',
+    answer: 'Ergonomics',
+    accept: ['ergonomics','human factors','ergonomics/human factors'],
+    info: 'From the Advanced HCI Theories slides: "Ergonomics — study of the physical characteristics of interaction. Also known as human factors." Ergonomics ensures hardware, software, and interfaces are comfortable, efficient, and safe. It is good at defining standards and guidelines for constraining how certain aspects of systems are designed.'
+  },
+  {
+    type: 'id',
+    q: 'From the Evolution of HCI slides, what book by Don Norman published during the Cognitive Revolution highlighted the importance of user-centered design?',
+    answer: 'The Psychology of Everyday Things',
+    accept: ['the psychology of everyday things','psychology of everyday things','the design of everyday things'],
+    info: 'From the Evolution of HCI slides: "The publication of Don Norman\'s \'The Psychology of Everyday Things\' highlighted the importance of user-centered design" during the Cognitive Revolution (1980s–1990s). This book introduced concepts like affordances, mappings, and feedback that became central to HCI and interaction design practice.'
+  },
+  {
+    type: 'id',
+    q: 'In the Design Thinking slides, Stage 4 involves developing low-fidelity or high-fidelity representations to test ideas. What is this stage called?',
+    answer: 'Prototype',
+    accept: ['prototype','prototyping'],
+    info: 'From the Design Thinking Process slides — Stage 4 Prototype: "Develop low-fidelity or high-fidelity prototypes to test ideas. Quickly build and refine potential solutions based on feedback." Prototypes range from paper sketches to interactive mockups and are meant to be refined through testing, not delivered as final products.'
+  },
+  {
+    type: 'id',
+    q: 'According to the Evolution of HCI slides, what type of computing describes the proliferation of devices making computers accessible everywhere in everyday life, prominent in the 1990s–2000s?',
+    answer: 'Ubiquitous Computing',
+    accept: ['ubiquitous computing','ubiquitous','pervasive computing'],
+    info: 'From the Evolution of HCI slides: "The proliferation of personal computers and the advent of the internet led to a focus on ubiquitous computing" in the 1990s–2000s. This era introduced mobile devices like smartphones and PDAs and led to responsive and adaptive design principles to accommodate diverse screen sizes and input methods.'
+  },
+  {
+    type: 'id',
+    q: 'From the Advanced HCI slides, what type of human error occurs when the user does not even have the right goal?',
+    answer: 'Mistake',
+    accept: ['mistake','mistakes'],
+    info: 'From the Advanced HCI Theories slides: "mistake — may not even have right goal!" In contrast, a slip is when the user has the right goal but performs the wrong action. The fix for mistakes is better understanding of the system, while the fix for slips is better interface design.'
+  },
+  {
+    type: 'id',
+    q: 'The Design Thinking slides identify users\' desires, goals, preferences, and expectations as what?',
+    answer: 'User Needs',
+    accept: ['user needs','user need','needs'],
+    info: 'From the Design Thinking Process slides: "User needs refer to users\' desires, goals, preferences and expectations when they interact with a product or service." These encompass functionality, usability, aesthetics, accessibility, and emotional satisfaction. Understanding user needs is described as the backbone of UX design.'
+  },
+  {
+    type: 'id',
+    q: 'According to the Evolution of HCI slides, what aspect of AI systems does the present-future era of HCI emphasize alongside transparency and fairness?',
+    answer: 'User Control',
+    accept: ['user control','control','user controls'],
+    info: 'From the Evolution of HCI slides on the Ethical Considerations era: HCI emphasizes "transparency, fairness, and user control" in AI systems. Conversations around responsible AI and technology\'s societal impact are becoming integral to HCI research. User control ensures that humans remain empowered even as AI automates more decisions.'
+  },
+  {
+    type: 'id',
+    q: 'From the Advanced HCI slides, what is the name of the interaction style that uses speech recognition or typed text and is described as "familiar to the user" but can be vague and ambiguous?',
+    answer: 'Natural Language',
+    accept: ['natural language','natural language interface','natural language interaction'],
+    info: 'From the Advanced HCI Theories slides on Natural Language: "Familiar to user. Speech recognition or typed natural language. Problems — vague, ambiguous, hard to do well! Solutions — try to understand a subset, pick on key words." Natural language interfaces aim to let users communicate with computers as they would with other people.'
+  },
+  {
+    type: 'id',
+    q: 'According to the Design Thinking slides, the first stage of the Design Thinking process involves understanding users through research, interviews, and observation to identify their pain points. What is this stage?',
+    answer: 'Empathize',
+    accept: ['empathize','empathise','empathy stage'],
+    info: 'From the Design Thinking Process slides — Stage 1 Empathize: "Understand users and their needs through research, interviews, and observation. Identify pain points and challenges from the user\'s perspective." This stage sets aside designer assumptions and builds a genuine understanding of the people who will use the solution.'
+  },
+  {
+    type: 'id',
+    q: 'In the Evolution of HCI slides, what challenge involves designing interfaces that cater to users from different cultural backgrounds with different nuances and preferences?',
+    answer: 'Cross-Cultural Design',
+    accept: ['cross-cultural design','cross cultural design','cross-cultural','cultural design'],
+    info: 'From the Evolution of HCI slides: "Designing interfaces that cater to users from diverse cultural backgrounds requires a deep understanding of cultural nuances and preferences, presenting a challenge in globalized digital products." Cross-Cultural Design ensures interfaces feel appropriate and usable across different societies and regions.'
+  },
+  {
+    type: 'id',
+    q: 'According to the Advanced HCI slides, what represents the mismatch between the user\'s expectation of changed system state and the actual presentation of that state?',
+    answer: 'Gulf of Evaluation',
+    accept: ['gulf of evaluation','evaluation gulf'],
+    info: 'From the Advanced HCI Theories slides: "Gulf of Evaluation — user\'s expectation of changed system state ≠ actual presentation of this state." This occurs when the system does not clearly communicate what has happened, making it hard for users to understand whether their actions had the intended effect.'
+  },
+  {
+    type: 'id',
+    q: 'From the Design Thinking slides, Stage 3 involves brainstorming multiple creative solutions and encouraging out-of-the-box thinking. What is the name of this stage?',
+    answer: 'Ideate',
+    accept: ['ideate','ideation'],
+    info: 'From the Design Thinking Process slides — Stage 3 Ideate: "Brainstorm multiple creative solutions to the defined problem. Encourage out-of-the-box thinking and explore different approaches." Ideation generates a large pool of ideas without judgment, so the team can then select and develop the most promising directions into prototypes.'
+  },
+
+  // ─── TRUE OR FALSE (15) ───
+  // Source: All three PPTX files
+  {
+    type: 'tf',
+    q: 'According to the Advanced HCI slides, Norman\'s model of interaction concentrates on the system\'s internal architecture rather than the user\'s view of the interface.',
+    answer: false,
+    explain: 'FALSE — The Advanced HCI slides explicitly state: "Norman\'s model concentrates on the user\'s view of the interface." It describes seven stages from the user\'s perspective: establishing a goal through evaluation of the system state.',
+    info: 'Donald Norman\'s model is user-centric by design. Its seven stages — from goal formation through action execution and system evaluation — all describe what the user experiences and does, not what happens inside the system. This user-first perspective is what makes it a foundational HCI model.'
+  },
+  {
+    type: 'tf',
+    q: 'The Abowd and Beale framework, as presented in the Advanced HCI slides, is NOT restricted to electronic computer systems and can be used as a general framework for understanding interaction.',
+    answer: true,
+    explain: 'TRUE — The Advanced HCI slides state the Abowd and Beale framework is "not restricted to electronic computer systems" and serves as a "general framework for understanding interaction."',
+    info: 'From the Advanced HCI slides: Abowd and Beale\'s framework "allows comparative assessment of systems" and "identifies all major components involved in interaction." Because it is an abstraction of the interaction process — not tied to any specific technology — it applies to any system where users communicate with a machine.'
+  },
+  {
+    type: 'tf',
+    q: 'According to the Evolution of HCI slides, the origins of HCI can be traced back to the Space Race in the 1960s.',
+    answer: false,
+    explain: 'FALSE — The Evolution of HCI slides state: "The origins of HCI can be traced back to World War II," not the Space Race. Early computing systems were developed in the 1940s context of wartime research.',
+    info: 'The Evolution of HCI slides place the Early Foundations era in the 1940s–1960s, directly tracing HCI origins to World War II research and the development of punch cards and command-line interfaces. The focus was making computers accessible to a limited group of experts and professionals.'
+  },
+  {
+    type: 'tf',
+    q: 'The Design Thinking Process slides describe the five-stage process as strictly linear, meaning each stage must be completed before moving to the next.',
+    answer: false,
+    explain: 'FALSE — The Design Thinking slides explicitly state it is "a non-linear, iterative process." Teams can revisit and loop through stages multiple times based on what they learn.',
+    info: 'From the Design Thinking Process slides: "Design Thinking is a non-linear, iterative process that can have anywhere from five phases, depending on whom you talk to." The iterative nature means test results in Stage 5 can send the team back to Empathize or Define, making the process flexible and adaptive.'
+  },
+  {
+    type: 'tf',
+    q: 'According to the Advanced HCI slides, ergonomics is useful for defining standards and guidelines that constrain how certain aspects of systems are designed.',
+    answer: true,
+    explain: 'TRUE — The Advanced HCI slides state: "Ergonomics good at defining standards and guidelines for constraining the way we design certain aspects of systems."',
+    info: 'From the Advanced HCI Theories slides: Ergonomics (also called human factors) studies the physical characteristics of interaction. It provides design standards for things like keyboard layouts, screen brightness, posture, and input device placement — all of which affect how comfortable and effective human-computer interaction is.'
+  },
+  {
+    type: 'tf',
+    q: 'According to the Evolution of HCI slides, social media platforms influenced the design of collaborative and social interfaces during the 2000s–2010s era.',
+    answer: true,
+    explain: 'TRUE — The Evolution of HCI slides state: "The rise of social media platforms and online communities influenced the design of collaborative and social interfaces" during the 2000s–2010s.',
+    info: 'This era saw HCI expand "beyond usability to consider social and emotional aspects of interaction." Social media platforms (Facebook, Twitter, YouTube) created entirely new HCI challenges around collaborative tools, shared content, notifications, and emotional engagement at a massive scale.'
+  },
+  {
+    type: 'tf',
+    q: 'The Design Thinking slides state that "Role Ambiguity" — where people confuse UX design with graphic design — is identified as one of the Key Challenges in addressing user needs.',
+    answer: true,
+    explain: 'TRUE — The Design Thinking slides explicitly list "Role Ambiguity" as a key challenge: "Many people confuse UX design with graphic design, or they consider it a subset of user interface (UI) design."',
+    info: 'From the Design Thinking Process slides: Role Ambiguity causes "misunderstandings and limitations in the scope of the UX designer\'s role." Designers must educate stakeholders and advocate for users to establish a clear understanding of UX design\'s value and impact in addressing real user needs.'
+  },
+  {
+    type: 'tf',
+    q: 'According to the Advanced HCI slides, Command Line Interfaces are described as better suited for novice users than for expert users.',
+    answer: false,
+    explain: 'FALSE — The Advanced HCI slides state the opposite: CLI is "better for expert users than novices." Novices struggle with memorizing command syntax, making CLIs less accessible to beginners.',
+    info: 'From the Advanced HCI Theories slides: Command Line Interfaces are "suitable for repetitive tasks, better for expert users than novices, offers direct access to system functionality." Expert users appreciate the speed and scriptability of CLIs, while novices benefit more from visual interfaces like menus and GUIs.'
+  },
+  {
+    type: 'tf',
+    q: 'The Design Thinking slides identify "Lack of User Research" as a key challenge that can result in designers creating products that do not effectively address user pain points.',
+    answer: true,
+    explain: 'TRUE — The Design Thinking slides state: "not doing enough user research is a common problem" and without it, "designers might end up creating products that don\'t effectively address user pain points."',
+    info: 'From the Design Thinking Process slides: "User research helps designers get insights into user behaviors, preferences, points of view and motivations." Methods like card sorting and semi-structured interviews enable designers to ask relevant research questions and make informed design decisions grounded in real user data.'
+  },
+  {
+    type: 'tf',
+    q: 'According to the Evolution of HCI slides, the Cognitive Revolution emphasized understanding human thought processes and mental models in interaction design.',
+    answer: true,
+    explain: 'TRUE — The Evolution of HCI slides: "The cognitive revolution in HCI emphasized understanding human thought processes and mental models" during the 1980s–1990s.',
+    info: 'During the Cognitive Revolution, HCI researchers applied cognitive psychology principles — feedback, memory, and attention — to interface design. This era made user-centered design a formal discipline, anchored by Don Norman\'s work on how mental models shape how people understand and use everyday things, including computers.'
+  },
+  {
+    type: 'tf',
+    q: 'The Advanced HCI slides state that Natural Language interfaces are free of problems and are easy to implement correctly.',
+    answer: false,
+    explain: 'FALSE — The Advanced HCI slides describe Natural Language as having significant problems: "vague, ambiguous, hard to do well!" Solutions involve understanding a subset of language and picking on key words.',
+    info: 'From the Advanced HCI Theories slides on Natural Language interaction: while it is "familiar to user" and uses "speech recognition or typed natural language," it faces real technical challenges. Human language is inherently ambiguous and context-dependent, making it one of the most difficult interaction styles to implement reliably.'
+  },
+  {
+    type: 'tf',
+    q: 'According to the Design Thinking Process slides, Stage 5 (Test) involves gathering user feedback by testing prototypes in real-world scenarios and iterating based on test results.',
+    answer: true,
+    explain: 'TRUE — The Design Thinking slides describe Stage 5 — Test: "Gather user feedback by testing prototypes in real-world scenarios. Iterate and refine the solution based on test results."',
+    info: 'Testing is the final stage in Design Thinking\'s five-stage model but is not an endpoint — results feed back into earlier stages. Testing with real users in real contexts reveals gaps between designer assumptions and actual user behavior, driving the iterative improvements that make products genuinely user-centered.'
+  },
+  {
+    type: 'tf',
+    q: 'The Evolution of HCI slides state that "Interdisciplinary Collaboration" — involving psychology, sociology, and computer science — is a challenge in HCI research.',
+    answer: true,
+    explain: 'TRUE — The Evolution of HCI slides: "Effective HCI research often requires collaboration across disciplines, including psychology, sociology, and computer science. Bridging these interdisciplinary gaps can be challenging but is essential for holistic research."',
+    info: 'From the Evolution of HCI slides on HCI Challenges: Interdisciplinary Collaboration is difficult because each field has its own vocabulary, methods, and standards. Yet HCI\'s complexity — spanning human cognition, social behavior, technology design, and ethics — means no single discipline can address it alone.'
+  },
+  {
+    type: 'tf',
+    q: 'According to the Advanced HCI slides, a "mistake" in human error can be fixed primarily through better interface design.',
+    answer: false,
+    explain: 'FALSE — The Advanced HCI slides specify: "slip — better interface design; mistake — better understanding of system." A mistake (having the wrong goal) requires the user to better understand the system, not just a better interface.',
+    info: 'From the Advanced HCI Theories slides: Slips and mistakes are two distinct error types. A slip (correct goal, wrong action) is addressed through better interface design that prevents easy errors. A mistake (wrong goal) is addressed through better user education and system feedback that helps users build an accurate mental model.'
+  },
+  {
+    type: 'tf',
+    q: 'The Evolution of HCI slides describe Human-AI Interaction as an area where HCI researchers investigate issues related to trust, transparency, and ethical implications of AI-powered interfaces.',
+    answer: true,
+    explain: 'TRUE — The Evolution of HCI slides state on Human-AI Interaction: "HCI researchers are investigating how users interact with intelligent systems. This includes issues related to trust, transparency, and the ethical implications of AI-powered interfaces."',
+    info: 'As AI becomes embedded in everyday systems — from recommendation engines to medical diagnostics — HCI research must address how users understand, trust, and maintain control over AI decisions. Transparency (explainable AI) and fairness are central concerns in making AI-powered interfaces genuinely human-centered.'
+  }
+];
+
+let current = 0;
+let answers = new Array(50).fill(null); // null=unanswered, true=correct, false=wrong
+let skipped = new Set();
+let scoreCorrect = 0;
+let scoreWrong = 0;
+let scoreSkip = 0;
+let answered = new Array(50).fill(false);
+let mcCorrect = 0, idCorrect = 0, tfCorrect = 0;
+let mcCount = 0, idCount = 0, tfCount = 0;
+
+function startQuiz() {
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('quiz-screen').style.display = 'block';
+  questions.forEach(q => {
+    if(q.type==='mc') mcCount++;
+    else if(q.type==='id') idCount++;
+    else tfCount++;
+  });
+  buildDots();
+  renderQuestion();
+}
+
+function buildDots() {
+  const nav = document.getElementById('dot-nav');
+  nav.innerHTML = '';
+  questions.forEach((_,i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i===0?' current':'');
+    d.title = `Q${i+1}`;
+    d.onclick = () => jumpTo(i);
+    nav.appendChild(d);
+  });
+}
+
+function updateDots() {
+  const dots = document.querySelectorAll('.dot');
+  dots.forEach((d,i) => {
+    d.className = 'dot';
+    if(i===current) d.classList.add('current');
+    else if(answers[i]===true) d.classList.add('answered-correct');
+    else if(answers[i]===false) d.classList.add('answered-wrong');
+    else if(skipped.has(i)) d.classList.add('answered-wrong');
+  });
+}
+
+function jumpTo(i) {
+  current = i;
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = questions[current];
+  const card = document.getElementById('question-card');
+  card.style.animation = 'none';
+  void card.offsetWidth;
+  card.style.animation = 'slideUp 0.4s cubic-bezier(0.4,0,0.2,1) both';
+
+  document.getElementById('q-current').textContent = current + 1;
+  document.getElementById('q-num-label').textContent = String(current+1).padStart(2,'0');
+
+  const badge = document.getElementById('q-type-badge');
+  const typeMap = { mc: ['Multiple Choice','badge-mc'], id: ['Identification','badge-id'], tf: ['True or False','badge-tf'] };
+  badge.textContent = typeMap[q.type][0];
+  badge.className = 'q-type-badge ' + typeMap[q.type][1];
+
+  document.getElementById('question-text').textContent = q.q;
+
+  const area = document.getElementById('answer-area');
+  area.innerHTML = '';
+
+  if(q.type === 'mc') renderMC(q, area);
+  else if(q.type === 'id') renderID(q, area);
+  else renderTF(q, area);
+
+  // feedback
+  const fb = document.getElementById('feedback-box');
+  fb.className = 'feedback-box';
+  fb.style.display = 'none';
+  const panel = document.getElementById('info-panel');
+  panel.classList.remove('show');
+
+  if(answered[current]) {
+    showStoredFeedback(q);
+    disableAnswers();
+  }
+
+  const progress = ((current + 1) / 50) * 100;
+  document.getElementById('progress-fill').style.width = progress + '%';
+
+  document.getElementById('prev-btn').disabled = current === 0;
+  document.getElementById('next-btn').disabled = !answered[current] && !skipped.has(current);
+  document.getElementById('skip-btn').style.display = (answered[current] || skipped.has(current)) ? 'none' : '';
+
+  updateDots();
+  updateStats();
+}
+
+function renderMC(q, area) {
+  const grid = document.createElement('div');
+  grid.className = 'options-grid';
+  const labels = ['A','B','C','D'];
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = `<span class="option-label">${labels[i]}</span>${opt}`;
+    btn.onclick = () => selectMC(q, i, btn, grid);
+    grid.appendChild(btn);
+  });
+  area.appendChild(grid);
+}
+
+function selectMC(q, i, btn, grid) {
+  if(answered[current]) return;
+  answered[current] = true;
+  const isCorrect = i === q.answer;
+  const btns = grid.querySelectorAll('.option-btn');
+  btns.forEach((b,idx) => {
+    b.disabled = true;
+    if(idx === q.answer) b.classList.add('reveal-correct');
+  });
+  if(isCorrect) {
+    btn.classList.remove('reveal-correct');
+    btn.classList.add('correct');
+    answers[current] = true;
+    scoreCorrect++;
+    mcCorrect++;
+    showFeedback(true, '');
+  } else {
+    btn.classList.add('wrong');
+    btn.classList.remove('reveal-correct');
+    answers[current] = false;
+    scoreWrong++;
+    showFeedback(false, `Correct answer: ${q.options[q.answer]}`);
+  }
+  enableNext();
+}
+
+function renderTF(q, area) {
+  const grid = document.createElement('div');
+  grid.className = 'tf-grid';
+  const trueBtn = document.createElement('button');
+  trueBtn.className = 'tf-btn true-btn';
+  trueBtn.textContent = 'TRUE';
+  const falseBtn = document.createElement('button');
+  falseBtn.className = 'tf-btn false-btn';
+  falseBtn.textContent = 'FALSE';
+  trueBtn.onclick = () => selectTF(q, true, trueBtn, falseBtn);
+  falseBtn.onclick = () => selectTF(q, false, falseBtn, trueBtn);
+  grid.appendChild(trueBtn);
+  grid.appendChild(falseBtn);
+  area.appendChild(grid);
+}
+
+function selectTF(q, val, chosen, other) {
+  if(answered[current]) return;
+  answered[current] = true;
+  chosen.disabled = true;
+  other.disabled = true;
+  const isCorrect = val === q.answer;
+  if(isCorrect) {
+    chosen.classList.add('correct');
+    answers[current] = true;
+    scoreCorrect++;
+    tfCorrect++;
+    showFeedback(true, q.explain);
+  } else {
+    chosen.classList.add('wrong');
+    const correctBtn = val ? other : chosen;
+    if(!isCorrect) other.classList.add('reveal-correct');
+    answers[current] = false;
+    scoreWrong++;
+    showFeedback(false, q.explain);
+  }
+  enableNext();
+}
+
+function renderID(q, area) {
+  const wrap = document.createElement('div');
+  wrap.className = 'id-wrap';
+  const input = document.createElement('input');
+  input.className = 'id-input';
+  input.type = 'text';
+  input.placeholder = 'Type your answer here...';
+  input.autocomplete = 'off';
+  const btn = document.createElement('button');
+  btn.className = 'id-submit';
+  btn.textContent = 'Submit';
+  btn.onclick = () => submitID(q, input, btn);
+  input.addEventListener('keydown', e => { if(e.key==='Enter') btn.click(); });
+  wrap.appendChild(input);
+  wrap.appendChild(btn);
+  area.appendChild(wrap);
+}
+
+function submitID(q, input, btn) {
+  if(answered[current]) return;
+  const val = input.value.trim().toLowerCase();
+  if(!val) { input.focus(); return; }
+  answered[current] = true;
+  input.disabled = true;
+  btn.disabled = true;
+  const accepted = q.accept || [q.answer.toLowerCase()];
+  const isCorrect = accepted.some(a => val === a.toLowerCase());
+  if(isCorrect) {
+    input.classList.add('correct');
+    answers[current] = true;
+    scoreCorrect++;
+    idCorrect++;
+    showFeedback(true, '');
+  } else {
+    input.classList.add('wrong');
+    answers[current] = false;
+    scoreWrong++;
+    showFeedback(false, `Correct answer: ${q.answer}`);
+  }
+  enableNext();
+}
+
+function showFeedback(correct, extra) {
+  const fb = document.getElementById('feedback-box');
+  const icon = document.getElementById('feedback-icon');
+  const text = document.getElementById('feedback-text');
+  fb.className = 'feedback-box show ' + (correct ? 'feedback-correct' : 'feedback-wrong');
+  icon.textContent = correct ? '✓' : '✗';
+  text.textContent = correct ? ('Correct! ' + (extra||'')) : (extra || 'Incorrect.');
+  fb.style.display = 'flex';
+  showInfoPanel(questions[current]);
+}
+
+function showStoredFeedback(q) {
+  const isCorrect = answers[current] === true;
+  const fb = document.getElementById('feedback-box');
+  const icon = document.getElementById('feedback-icon');
+  const text = document.getElementById('feedback-text');
+  fb.className = 'feedback-box show ' + (isCorrect ? 'feedback-correct' : 'feedback-wrong');
+  icon.textContent = isCorrect ? '✓' : '✗';
+  let msg = isCorrect ? 'Correct! ' : 'Incorrect. ';
+  if(!isCorrect) {
+    if(q.type==='mc') msg += `Correct answer: ${q.options[q.answer]}`;
+    else if(q.type==='id') msg += `Correct answer: ${q.answer}`;
+    else if(q.type==='tf') msg += q.explain || '';
+  } else {
+    if(q.type==='tf') msg += q.explain || '';
+  }
+  text.textContent = msg;
+  fb.style.display = 'flex';
+  showInfoPanel(q);
+}
+
+function showInfoPanel(q) {
+  const panel = document.getElementById('info-panel');
+  const panelText = document.getElementById('info-panel-text');
+  const infoContent = q.info || (q.type === 'tf' ? q.explain : null);
+  if(infoContent) {
+    panelText.textContent = infoContent;
+    panel.classList.add('show');
+  }
+}
+
+function disableAnswers() {
+  document.querySelectorAll('.option-btn, .tf-btn, .id-input, .id-submit').forEach(el => {
+    el.disabled = true;
+  });
+  // Re-highlight correct for MC
+  const q = questions[current];
+  if(q.type==='mc') {
+    const btns = document.querySelectorAll('.option-btn');
+    btns.forEach((b,i) => {
+      if(i===q.answer && !b.classList.contains('wrong')) b.classList.add('reveal-correct');
+    });
+  }
+}
+
+function enableNext() {
+  document.getElementById('next-btn').disabled = false;
+  document.getElementById('skip-btn').style.display = 'none';
+}
+
+function skipQuestion() {
+  if(answered[current]) return;
+  skipped.add(current);
+  scoreSkip++;
+  answers[current] = null;
+  document.getElementById('next-btn').disabled = false;
+  document.getElementById('skip-btn').style.display = 'none';
+  updateStats();
+  updateDots();
+}
+
+function nextQuestion() {
+  if(current < 49) {
+    current++;
+    renderQuestion();
+  } else {
+    showResults();
+  }
+}
+
+function prevQuestion() {
+  if(current > 0) {
+    current--;
+    renderQuestion();
+  }
+}
+
+function updateStats() {
+  document.getElementById('score-correct').textContent = scoreCorrect;
+  document.getElementById('score-wrong').textContent = scoreWrong;
+  document.getElementById('score-skip').textContent = scoreSkip;
+}
+
+function showResults() {
+  document.getElementById('quiz-screen').style.display = 'none';
+  const results = document.getElementById('results-screen');
+  results.style.display = 'block';
+
+  const score = scoreCorrect;
+  document.getElementById('final-score').textContent = score;
+  document.getElementById('res-mc').textContent = `${mcCorrect}/${mcCount}`;
+  document.getElementById('res-id').textContent = `${idCorrect}/${idCount}`;
+  document.getElementById('res-tf').textContent = `${tfCorrect}/${tfCount}`;
+
+  const pct = (score / 50) * 100;
+  let grade, color;
+  if(pct >= 90) { grade = 'A — Excellent!'; color = 'linear-gradient(135deg,var(--accent3),#2dd)'; }
+  else if(pct >= 80) { grade = 'B — Great Work!'; color = 'linear-gradient(135deg,var(--accent),#8888ff)'; }
+  else if(pct >= 70) { grade = 'C — Good Effort'; color = 'linear-gradient(135deg,var(--warning),#f0a500)'; }
+  else if(pct >= 60) { grade = 'D — Keep Studying'; color = 'linear-gradient(135deg,#f97316,#e55)'; }
+  else { grade = 'F — Review Material'; color = 'linear-gradient(135deg,var(--wrong),#c00)'; }
+
+  const gb = document.getElementById('grade-badge');
+  gb.textContent = grade;
+  gb.style.background = color;
+  gb.style.color = '#fff';
+}
+
+function restartQuiz() {
+  current = 0;
+  answers = new Array(50).fill(null);
+  skipped = new Set();
+  scoreCorrect = 0; scoreWrong = 0; scoreSkip = 0;
+  answered = new Array(50).fill(false);
+  mcCorrect = 0; idCorrect = 0; tfCorrect = 0;
+  document.getElementById('results-screen').style.display = 'none';
+  document.getElementById('quiz-screen').style.display = 'block';
+  buildDots();
+  renderQuestion();
+}
+
+// Initialize
+document.getElementById('start-screen').style.display = 'block';
+</script>
+</body>
+</html>
